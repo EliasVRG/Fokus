@@ -5,8 +5,13 @@ const formAdicionarTarefa = document.querySelector(".app__form-add-task")
 const textArea = document.querySelector(".app__form-textarea")
 const ulTarefas = document.querySelector(".app__section-task-list")
 const btnCancelar = document.querySelector(".app__form-footer__button--cancel")
+const  paragrafoDaDescricaoDaTrarefa = document.querySelector(".app__section-active-task-description")
 
-const tarefas = JSON.parse(localStorage.getItem('tarefas')) || []
+const btnRemoverConcluidas = document.querySelector('#btn-remover-concluidas')
+
+let tarefas = JSON.parse(localStorage.getItem('tarefas')) || []
+let tarefaSelecionada = null
+let liTarefaSelecionada = null
 
 function atualizarTarefas(){
     localStorage.setItem('tarefas', JSON.stringify(tarefas))
@@ -49,6 +54,29 @@ function criarElementoTarefa(tarefa){
     li.append(paragrafo)
     li.append(botao)
 
+    if(tarefa.completa){
+        li.add('app__section-task-list-item-complete')
+        botao.setAttribute('disabled', 'disabled')
+    } else{
+        li.onclick = () => {
+            document.querySelectorAll('.app__section-task-list-item-active')
+                .forEach(elemento => {
+                    elemento.classList.remove('app__section-task-list-item-active')
+                })
+            if(tarefaSelecionada == tarefa){
+                paragrafoDaDescricaoDaTrarefa.textContent = ''
+                tarefaSelecionada = null
+                liTarefaSelecionada = null
+                return
+            }
+            tarefaSelecionada = tarefa
+            liTarefaSelecionada = li
+            paragrafoDaDescricaoDaTrarefa.textContent = tarefa.descricao
+    
+            li.classList.add('app__section-task-list-item-active')
+        }
+    }
+
     return li
 }
 
@@ -79,3 +107,24 @@ btnCancelar.addEventListener('click', () => {
     textArea.value = ''
     formAdicionarTarefa.classList.add('hidden')
 })
+
+document.addEventListener('FocoFinalizado', () =>{
+    if(tarefaSelecionada && liTarefaSelecionada){
+        liTarefaSelecionada.classList.remove('app__section-task-list-item-active')
+        liTarefaSelecionada.add('app__section-task-list-item-complete')
+        liTarefaSelecionada.querySelector('button').setAttribute('disabled', 'disabled')
+        tarefaSelecionada.completa = true
+        atualizarTarefas()
+    }
+})
+
+const removerTarefas = (somenteCompletas) => {
+    const seletor = somenteCompletas ? ".app__section-task-list-item-complete" : ""
+    document.querySelectorAll(seletor).forEach(elemento => {
+        elemento.remove()
+    })
+    tarefas = tarefas.filter(tarefa => !tarefa.completa) 
+    atualizarTarefas()
+}
+
+btnRemoverConcluidas.onclick = () => removerTarefas(true)
